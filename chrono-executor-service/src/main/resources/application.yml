@@ -1,0 +1,57 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: chrono-executor-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/chronoflow
+    username: chronoflow
+    password: chronoflow
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+    open-in-view: false
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 0
+    validate-on-migrate: true
+    table: flyway_schema_history_executor
+  kafka:
+    bootstrap-servers: localhost:9092
+    consumer:
+      group-id: chrono-executor-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://localhost:4318/v1/traces
+
+app:
+  kafka:
+    topics:
+      job-execute: chronoflow.job.execute.v1
+      job-dlq: chronoflow.job.dlq.v1
+  executor:
+    max-attempts: 5
+    retry-backoff-ms: 5000
+    connect-timeout-ms: 2000
+    read-timeout-ms: 4000
