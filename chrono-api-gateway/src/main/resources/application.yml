@@ -1,0 +1,54 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: chrono-api-gateway
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+  cloud:
+    gateway:
+      routes:
+        - id: job-service
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/v1/tenants/**,/api/v1/jobs/**,/api/v1/health
+        - id: scheduler-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/v1/scheduler/**,/api/v1/scheduler-health
+        - id: executor-service
+          uri: http://localhost:8083
+          predicates:
+            - Path=/api/v1/executor/**,/api/v1/executor-health
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,gateway
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://localhost:4318/v1/traces
+
+app:
+  security:
+    api-key-header: X-API-Key
+    auth-service-base-url: http://localhost:8084
+    internal-auth-path: /internal/v1/api-keys/validate
+  rate-limit:
+    max-requests: 120
+    window-seconds: 60
+  kafka:
+    topics:
+      gateway-audit: chronoflow.gateway.audit.v1
